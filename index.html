@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Revenue Lab Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F6F7FB; --fg:#2A2E34; --muted:#6B7178; --card:#FFFFFF; --line:#DFE3EE; --soft:#EEF1F8;
+  --title1:#1F7A55; --title2:var(--fg); --dot:#1F7A55;
+  --s1:#0E4D36; --s2:#1F7A55; --s3:#3A9B71; --s4:#6DBE96; --s5:#A8DCC0; --g-label:#1F7A55;
+  --data:#2a78d6; --data-soft:#dbe8f8;
+  --sc-cons:#eb6834; --sc-base:#2a78d6; --sc-aggr:#1baf7a;
+  --pass:#0a7d3e; --pass-bg:#e3f3e9; --fail:#b42318; --fail-bg:#fbe9e7; --hold:#8a5a00; --hold-bg:#fbf1dc;
+  --display:"Inter","Helvetica Neue",Arial,sans-serif; --body:"Inter","Helvetica Neue",Arial,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#12141C; --fg:#ECEDEF; --muted:#A4A9B0; --card:#1B1E29; --line:#2E3242; --soft:#252938; --title1:#6DBE96; --title2:#FFFFFF; --g-label:#6DBE96; --dot:#6DBE96;
+  --data:#3987e5; --data-soft:#1d3350; --sc-cons:#d95926; --sc-base:#3987e5; --sc-aggr:#199e70;
+  --pass:#4cc38a; --pass-bg:#123022; --fail:#f97066; --fail-bg:#33181a; --hold:#f0b429; --hold-bg:#2f2610; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#12141C; --fg:#ECEDEF; --muted:#A4A9B0; --card:#1B1E29; --line:#2E3242; --soft:#252938; --title1:#6DBE96; --title2:#FFFFFF; --g-label:#6DBE96; --dot:#6DBE96;
+  --data:#3987e5; --data-soft:#1d3350; --sc-cons:#d95926; --sc-base:#3987e5; --sc-aggr:#199e70;
+  --pass:#4cc38a; --pass-bg:#123022; --fail:#f97066; --fail-bg:#33181a; --hold:#f0b429; --hold-bg:#2f2610; color-scheme:dark }
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.55;margin:0;font-variant-numeric:tabular-nums}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:max(16px,3vw);padding-block:28px 72px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-size:clamp(40px,6.4vw,78px);line-height:1;font-weight:800;letter-spacing:-.025em}
+h1 .lab{color:var(--title1)}
+h1 .t2{color:var(--title2)}
+h2{font-size:clamp(25px,3.2vw,38px);font-weight:700;line-height:1.1;letter-spacing:-.01em}
+h3{font-size:18px;font-weight:700;line-height:1.25}
+p{margin:0}
+.eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--fg)}
+.eyebrow::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--dot);margin-right:8px;vertical-align:1px}
+.lead{max-width:70ch;color:var(--muted);font-size:17px}
+header{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;padding-bottom:8px}
+header::after{content:"";display:block;height:6px;border-radius:999px;margin-top:6px;background:linear-gradient(90deg,var(--s1) 0 20%,var(--s2) 0 40%,var(--s3) 0 60%,var(--s4) 0 80%,var(--s5) 0)}
+.by{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.by .studio{font-weight:700;font-size:13px;letter-spacing:.04em;border:1.5px solid var(--fg);border-radius:999px;padding:4px 12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:13.5px}
+.chip b{color:var(--g-label);font-weight:700}
+.toggle{display:inline-flex;align-items:center;gap:8px;font:600 13.5px var(--body);background:transparent;color:var(--fg);box-shadow:inset 0 0 0 1.5px var(--fg);border:0;border-radius:999px;padding:7px 14px;cursor:pointer}
+.toggle:hover{background:var(--soft)}
+.toggle.theme{margin-left:auto;padding:6px 13px;font:500 12.5px var(--mono);letter-spacing:.12em;text-transform:uppercase}
+.toggle.theme svg{flex:none}
+.toggle:focus-visible,nav.jump a:focus-visible,.scen button:focus-visible{outline:2px solid var(--g-label);outline-offset:2px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);padding:10px 0;border-bottom:1.5px solid var(--line);margin-top:6px}
+nav.jump{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;min-width:0;flex:1 1 300px}
+nav.jump::-webkit-scrollbar{display:none}
+nav.jump a{white-space:nowrap;text-decoration:none;color:var(--fg);font-size:13.5px;font-weight:600;padding:6px 11px;border-radius:999px;background:var(--soft)}
+nav.jump a:hover{background:var(--line)}
+.scen{display:flex;gap:6px;flex-wrap:wrap}
+.scen button{display:inline-flex;align-items:center;gap:8px;font:600 13.5px var(--body);background:transparent;color:var(--fg);box-shadow:inset 0 0 0 1.5px var(--line);border:0;border-radius:999px;padding:6px 13px;cursor:pointer}
+.scen button .sw{width:8px;height:8px;border-radius:50%}
+.scen button.on{background:var(--fg);color:var(--bg);box-shadow:inset 0 0 0 1.5px var(--fg)}
+
+section{margin-top:56px;scroll-margin-top:70px}
+.sec-head{display:grid;gap:8px;margin-bottom:20px;max-width:76ch}
+.sec-head p{color:var(--muted)}
+.k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+
+/* answer tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px}
+.tile{background:var(--card);border:1.5px solid var(--line);border-top:6px solid var(--sc);border-radius:18px;padding:16px 18px 18px;display:grid;gap:6px;align-content:start;min-width:0}
+.tile:nth-child(1){--sc:var(--s1)}.tile:nth-child(2){--sc:var(--s2)}.tile:nth-child(3){--sc:var(--s3)}.tile:nth-child(4){--sc:var(--s4)}
+.tile .k{color:var(--g-label)}
+.tile .num{font-family:var(--display);font-weight:800;font-size:34px;line-height:1.05;letter-spacing:-.02em;color:var(--fg)}
+.tile p{font-size:13.5px;color:var(--muted)}
+.checks{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.ck{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;padding:5px 12px 5px 9px;border-radius:999px}
+.ck.pass{background:var(--pass-bg);color:var(--pass)}
+.ck.fail{background:var(--fail-bg);color:var(--fail)}
+.ck.hold{background:var(--hold-bg);color:var(--hold)}
+
+/* calculator layout */
+.calc{display:grid;grid-template-columns:330px minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:980px){.calc{grid-template-columns:1fr}}
+.inputs{background:var(--card);border:1.5px solid var(--line);border-radius:18px;position:sticky;top:72px;max-height:calc(100vh - 88px);overflow:auto}
+@media (max-width:980px){.inputs{position:static;max-height:none}}
+.ig{padding:16px 18px;border-top:1.5px solid var(--line)}
+.ig:first-child{border-top:0}
+.ig h3{font-size:14px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+.ig h3 .sw{width:8px;height:8px;border-radius:50%}
+.f{margin-bottom:12px}
+.f:last-child{margin-bottom:0}
+.f .r{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.f label{font-size:13.5px;color:var(--muted)}
+.f .numbox{display:flex;align-items:center;background:var(--soft);border:1.5px solid transparent;border-radius:10px;padding:0 8px;height:30px}
+.f .numbox:focus-within{border-color:var(--g-label)}
+.f .numbox span{font:500 12px var(--mono);color:var(--muted)}
+.f input[type=number]{width:90px;text-align:right;font:700 13.5px var(--body);color:var(--fg);background:transparent;border:0;outline:none;padding:0 2px;-moz-appearance:textfield}
+.f input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+.f input[type=range]{width:100%;margin:8px 0 0;height:18px;background:transparent;-webkit-appearance:none;appearance:none}
+.f input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(var(--fg),var(--fg)) 0/var(--p,50%) 100% no-repeat,var(--line)}
+.f input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:var(--line)}
+.f input[type=range]::-moz-range-progress{height:4px;border-radius:2px;background:var(--fg)}
+.f input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--card);border:2px solid var(--fg);margin-top:-6px}
+.f input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--card);border:2px solid var(--fg)}
+.f .help{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.4}
+.derived{font-size:13px;color:var(--muted);background:var(--soft);border-radius:12px;padding:8px 11px;margin-top:6px}
+.derived b{color:var(--fg)}
+
+.out{display:grid;gap:18px;min-width:0}
+.panel{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:18px 20px 20px;min-width:0}
+.ph{display:flex;justify-content:space-between;align-items:baseline;gap:8px 12px;flex-wrap:wrap;margin-bottom:16px}
+.ph p{font-size:13.5px;color:var(--muted)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:1180px){.two{grid-template-columns:1fr}}
+
+/* chain */
+.chain{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:0}
+@media (max-width:1180px){.chain{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:20px}}
+@media (max-width:560px){.chain{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.node{padding-right:14px}
+.node .lab{font-size:13px;color:var(--muted);font-weight:500}
+.node .val{font-family:var(--display);font-size:clamp(19px,1.8vw,24px);font-weight:800;letter-spacing:-.02em;line-height:1.2;margin-top:2px}
+.node .per{font-size:12px;color:var(--muted)}
+.node .rate{font:500 11.5px var(--mono);color:var(--data);background:var(--data-soft);padding:0 6px;border-radius:6px}
+.node .barv{height:6px;background:var(--soft);border-radius:3px;margin-top:10px;overflow:hidden}
+.node .barv i{display:block;height:100%;background:var(--data);border-radius:3px}
+.node.money .barv i{background:var(--fg)}
+.chainnote{font-size:13px;color:var(--muted);margin-top:16px}
+
+/* gauges */
+.gnote{font-size:13px;color:var(--muted);margin:-6px 0 16px}
+.gauge{margin-bottom:20px}
+.gauge:last-child{margin-bottom:0}
+.gauge .gt{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.gauge .gt span{font-size:13.5px;color:var(--muted)}
+.gauge .gt b{font-family:var(--display);font-size:22px;font-weight:800;letter-spacing:-.015em}
+.track{position:relative;height:10px;background:var(--soft);border-radius:5px;margin:8px 0 7px}
+.track i{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
+.track .cap{position:absolute;top:-5px;bottom:-5px;width:2px;background:var(--fg)}
+.gf{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted)}
+.gf strong{color:var(--fg);font-weight:700}
+.stat3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px;padding-top:14px;border-top:1.5px solid var(--line)}
+.stat3 div{font-size:12.5px;color:var(--muted)}
+.stat3 b{display:block;font-family:var(--display);font-size:18px;font-weight:800;color:var(--fg);margin-top:2px}
+.big{font-family:var(--display);font-size:36px;font-weight:800;letter-spacing:-.025em;line-height:1}
+.big small{font-family:var(--body);font-size:14px;font-weight:500;color:var(--muted);letter-spacing:0;margin-left:6px}
+
+/* chart + table */
+svg text{font-family:var(--body)}
+.chart{width:100%;display:block}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-bottom:6px}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend .sw{width:8px;height:8px;border-radius:50%}
+.tbl{overflow-x:auto;background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:4px 6px;margin-top:14px}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
+th,td{text-align:right;padding:10px 12px;border-bottom:1.5px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+td:first-child{color:var(--muted)}
+tr:last-child td{border-bottom:0}
+th{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg);white-space:nowrap}
+th .sw{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
+td.ok{color:var(--pass);font-weight:700}
+td.no{color:var(--fail);font-weight:700}
+
+/* method */
+.mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:14px}
+.mtile{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:16px 18px;display:grid;gap:6px;align-content:start}
+.mtile p{font-size:14px;color:var(--muted)}
+.mtile code{font-family:var(--mono);font-size:12.5px;color:var(--fg);background:var(--soft);border-radius:8px;padding:6px 9px;display:block;line-height:1.5}
+.note{background:var(--soft);border-radius:16px;padding:14px 16px;font-size:14.5px;max-width:82ch;margin-top:14px}
+.labfoot{margin-top:72px;padding-top:20px;border-top:1.5px solid var(--line);font-size:13px;color:var(--muted);max-width:110ch}
+
+.tip{position:fixed;pointer-events:none;background:var(--fg);color:var(--bg);border-radius:10px;padding:8px 11px;font-size:12.5px;line-height:1.45;opacity:0;z-index:30;max-width:260px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="by"><span class="studio">Revenue lab by Simplificate</span><span class="eyebrow">Calculator · Paid inbound · Unit economics</span><button class="toggle theme" id="themeBtn" type="button"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M7 1a6 6 0 0 1 0 12z" fill="currentColor"/></svg><span id="themeLabel">Dark mode</span></button></div>
+  <h1><span class="t2">Revenue Lab</span> <span class="lab">Calculator</span></h1>
+  <p class="lead">Works back from the revenue target to the paid inbound volume, monthly spend, and the CPL and CAC ceilings the unit economics allow. Covers paid inbound only. Outbound, referrals, partners, organic and expansion revenue need their own plan.</p>
+  <div class="chips" id="chips"></div>
+  <div class="bar">
+    <nav class="jump" aria-label="Jump to section">
+      <a href="#answer">Answer</a><a href="#calculator">Calculator</a><a href="#scenarios">Scenarios</a><a href="#method">Method</a>
+    </nav>
+    <div class="scen" id="scen" role="tablist" aria-label="Scenario"></div>
+  </div>
+</header>
+
+<section id="answer">
+  <div class="sec-head"><span class="eyebrow">Answer</span><h2>What paid inbound has to deliver</h2><p id="answerSub"></p></div>
+  <div class="tiles" id="tiles"></div>
+  <div class="checks" id="checks"></div>
+</section>
+
+<section id="calculator">
+  <div class="sec-head"><span class="eyebrow">Calculator</span><h2>The funnel, worked back from revenue</h2><p>Move any input. Conversion rates belong to the active scenario; everything else is shared across all three.</p></div>
+  <div class="calc">
+    <aside class="inputs" id="inputs" aria-label="Inputs"></aside>
+    <div class="out">
+      <div class="panel">
+        <div class="ph"><h3>Funnel per selling month</h3><p id="chainSub"></p></div>
+        <div class="chain" id="chain"></div>
+        <p class="chainnote" id="chainNote"></p>
+      </div>
+      <div class="two">
+        <div class="panel">
+          <div class="ph"><h3>Unit economics check</h3><p>Actual cost against the ceiling</p></div>
+          <div id="gauges"></div>
+        </div>
+        <div class="panel">
+          <div class="ph"><h3>Pipeline coverage</h3><p>Open pipeline counts toward the target first</p></div>
+          <div id="pipeline"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="scenarios">
+  <div class="sec-head"><span class="eyebrow">Scenarios</span><h2>Conservative, base and aggressive</h2><p>Same target and costs, different conversion rates. Each scenario has its own spend ceiling, because open pipeline converts at its own SQL to closed-won rate. Click a bar to make that scenario active.</p></div>
+  <div class="panel">
+    <div class="ph"><h3>Monthly paid spend by scenario</h3></div>
+    <div class="legend" id="legend"></div>
+    <svg class="chart" id="spend" role="img" aria-label="Required monthly paid spend by scenario against the spend ceiling"></svg>
+  </div>
+  <div class="tbl"><table id="table"></table></div>
+</section>
+
+<section id="method">
+  <div class="sec-head"><span class="eyebrow">Method</span><h2>How the math works</h2><p>Every output traces back to these formulas.</p></div>
+  <div class="mgrid">
+    <div class="mtile"><span class="k">Target</span><code>Paid inbound target = Total target × Paid inbound share<br>From open pipeline = Open SQL pipeline × SQL→Won<br>New deals = (Paid inbound target − From open pipeline) ÷ ACV</code><p>Open pipeline counts toward the target first. Paid inbound volume is sized only for what is left.</p></div>
+    <div class="mtile"><span class="k">Selling window</span><code>Selling window = Planning window − Sales cycle</code><p>Leads created after that point close outside the period, so the volume has to come in fewer months.</p></div>
+    <div class="mtile"><span class="k">Funnel volume</span><code>SQLs = Deals ÷ SQL→Won<br>MQLs = SQLs ÷ MQL→SQL<br>Leads = MQLs ÷ Lead→MQL<br>Visits = Leads ÷ Visit→Lead</code></div>
+    <div class="mtile"><span class="k">Spend and cost</span><code>Paid spend = Visits × Cost per visit<br>Actual CPL = Cost per visit ÷ Visit→Lead<br>Actual paid CAC = Actual CPL ÷ Lead→Won</code></div>
+    <div class="mtile"><span class="k">Ceilings</span><code>Max CAC = ACV × Gross margin × (Payback ÷ 12)<br>Max paid CAC = Max CAC × Paid share of CAC<br>Max CPL = Max paid CAC × Lead→Won</code><p>ACV is annual, so payback is measured against first-year gross profit. CPL and paid CAC test the same constraint.</p></div>
+    <div class="mtile"><span class="k">Pipeline</span><code>Pipeline needed for full target = Paid inbound target ÷ SQL→Won<br>New SQL pipeline = New SQLs × ACV<br>Coverage ratio = 1 ÷ SQL→Won</code></div>
+  </div>
+  <div class="note"><b>Model type.</b> A deterministic planning model: fixed rates run through accounting identities. It estimates nothing from data and gives no confidence range. The three scenarios show sensitivity to conversion rates, not probability.<br><br><b>Assumptions.</b> Conversion rates are period averages. Every new lead moves through the full sales cycle. Open pipeline closes inside the planning window at the SQL to closed-won rate. Cost per visit is flat at any budget; real auction costs rise as spend scales, so high-volume scenarios understate the true cost. Spend is spread evenly across the selling window. Whole deals and SQLs are shown rounded up; every calculation uses the exact values.</div>
+</section>
+
+<p class="labfoot">Default values are example inputs. Replace them with the client's historical data before drawing conclusions.</p>
+</div>
+<div class="tip" id="tip" role="tooltip"></div>
+
+<script>
+/* theme */
+(function(){
+  const btn=document.getElementById('themeBtn'), lab=document.getElementById('themeLabel'), rootEl=document.documentElement;
+  const isDark=()=>rootEl.dataset.theme? rootEl.dataset.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  const sync=()=>{ lab.textContent=isDark()?'Light mode':'Dark mode'; };
+  try{ const t=localStorage.getItem('rev-calc-theme'); if(t) rootEl.dataset.theme=t; }catch(e){}
+  sync();
+  btn.onclick=()=>{ rootEl.dataset.theme=isDark()?'light':'dark'; try{localStorage.setItem('rev-calc-theme',rootEl.dataset.theme);}catch(e){} sync(); render(); };
+})();
+
+const SC=[{key:'cons',name:'Conservative',v:'--sc-cons'},{key:'base',name:'Base',v:'--sc-base'},{key:'aggr',name:'Aggressive',v:'--sc-aggr'}];
+const state={
+  active:'base',
+  shared:{target:1200000,inShare:60,acv:24000,cycle:4,window:12,cpv:5,gm:80,payback:12,paidShare:50,pipeline:1500000},
+  rates:{cons:{v2l:1.0,l2m:25,m2s:30,s2w:18},base:{v2l:1.5,l2m:35,m2s:40,s2w:25},aggr:{v2l:2.0,l2m:45,m2s:50,s2w:30}}
+};
+const GROUPS=[
+  {t:'Revenue target',f:[
+    {k:'target',l:'Total new revenue target',min:100000,max:10000000,step:50000,pre:'€'},
+    {k:'inShare',l:'Paid inbound share',min:1,max:100,step:1,suf:'%',help:'The rest of the target comes from other sources.'},
+    {k:'acv',l:'Annual contract value (ACV)',min:1000,max:250000,step:500,pre:'€',help:'First-year value. Do not enter multi-year contract totals.'},
+    {k:'window',l:'Planning window',min:3,max:24,step:1,suf:'mo'},
+    {k:'cycle',l:'Sales cycle',min:0,max:23,step:0.5,suf:'mo',help:'Lead created to closed-won. Capped at one month below the planning window.'}],derived:true},
+  {t:'Paid media cost',f:[{k:'cpv',l:'Cost per visit',min:0.5,max:50,step:0.1,pre:'€',help:'Blended CPC across paid channels. Held flat at any budget.'}]},
+  {t:'Unit economics rule',f:[
+    {k:'gm',l:'Gross margin',min:20,max:95,step:1,suf:'%'},
+    {k:'payback',l:'CAC payback target',min:3,max:36,step:1,suf:'mo'},
+    {k:'paidShare',l:'Paid media share of CAC',min:5,max:100,step:1,suf:'%',help:'The rest covers sales cost, tools and content.'}]},
+  {t:'Pipeline today',f:[{k:'pipeline',l:'Open paid inbound SQL pipeline',min:0,max:20000000,step:50000,pre:'€',help:'Assumed to close inside the planning window at the SQL to closed-won rate.'}]}
+];
+const RATES=[
+  {k:'v2l',l:'Visit to lead',min:0.1,max:10,step:0.1,suf:'%'},
+  {k:'l2m',l:'Lead to MQL',min:1,max:100,step:1,suf:'%'},
+  {k:'m2s',l:'MQL to SQL',min:1,max:100,step:1,suf:'%'},
+  {k:'s2w',l:'SQL to closed-won',min:1,max:100,step:1,suf:'%'}
+];
+
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const eur=(n,d=0)=>'€'+Number(n).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
+const eurK=n=>Math.abs(n)>=1e6?'€'+(n/1e6).toFixed(2).replace(/\.?0+$/,'')+'M':Math.abs(n)>=1e4?'€'+Math.round(n/1e3)+'k':eur(n);
+const num=(n,d=0)=>Number(n).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
+const smart=n=>num(n,n<10?1:0);
+const mo=n=>Number.isInteger(n)?num(n):num(n,1);
+const mos=n=>mo(n)+(n===1?' month':' months');
+
+function calc(key){
+  const s=state.shared,r=state.rates[key];
+  const v2l=r.v2l/100,l2m=r.l2m/100,m2s=r.m2s/100,s2w=r.s2w/100;
+  const inTarget=s.target*s.inShare/100, sell=Math.max(1,s.window-s.cycle);
+  const fromPipe=Math.min(inTarget,s.pipeline*s2w), remaining=inTarget-fromPipe, deals=remaining/s.acv;
+  const sqls=deals/s2w,mqls=sqls/m2s,leads=mqls/l2m,visits=leads/v2l;
+  const total=visits*s.cpv,monthly=total/sell,cpl=s.cpv/v2l;
+  const maxCac=s.acv*(s.gm/100)*(s.payback/12),maxPaidCac=maxCac*(s.paidShare/100);
+  const l2w=l2m*m2s*s2w,paidCac=cpl/l2w,maxCpl=maxPaidCac*l2w,beCpv=maxCpl*v2l,ceiling=maxPaidCac*deals/sell;
+  const totalPipeNeeded=inTarget/s2w, newPipe=sqls*s.acv, covPct=Math.min(100,s.pipeline/totalPipeNeeded*100);
+  return {inTarget,fromPipe,remaining,totalPipeNeeded,newPipe,covPct,deals,sell,sqls,mqls,leads,visits,total,monthly,cpl,paidCac,maxCac,maxPaidCac,maxCpl,beCpv,ceiling,cov:1/s2w,l2w};
+}
+
+function field(id,f,v){
+  return `<div class="f" data-id="${id}"><div class="r"><label for="${id}">${f.l}</label>
+    <div class="numbox">${f.pre?`<span>${f.pre}</span>`:''}<input type="number" id="${id}" value="${v}" min="${f.min}" max="${f.max}" step="${f.step}">${f.suf?`<span>${f.suf}</span>`:''}</div></div>
+    <input type="range" aria-label="${f.l}" value="${v}" min="${f.min}" max="${f.max}" step="${f.step}">${f.help?`<div class="help">${f.help}</div>`:''}</div>`;
+}
+function buildScen(){
+  const t=document.getElementById('scen');
+  t.innerHTML=SC.map(s=>`<button role="tab" aria-selected="${s.key===state.active}" data-k="${s.key}" class="${s.key===state.active?'on':''}"><span class="sw" style="background:var(${s.v})"></span>${s.name}</button>`).join('');
+  t.querySelectorAll('button').forEach(b=>b.onclick=()=>setActive(b.dataset.k));
+}
+function setActive(k){state.active=k;buildScen();buildInputs();render();}
+function buildInputs(){
+  const sc=SC.find(s=>s.key===state.active);
+  let h=`<div class="ig"><h3><span class="sw" style="background:var(${sc.v})"></span>Conversion rates, ${sc.name.toLowerCase()}</h3>`;
+  RATES.forEach(f=>h+=field('r_'+f.k,f,state.rates[state.active][f.k]));
+  h+='</div>';
+  GROUPS.forEach(g=>{h+=`<div class="ig"><h3>${g.t}</h3>`;g.f.forEach(f=>h+=field('s_'+f.k,f,state.shared[f.k]));if(g.derived)h+='<div class="derived" id="derived"></div>';h+='</div>';});
+  const box=document.getElementById('inputs'),sc0=box.scrollTop;box.innerHTML=h;box.scrollTop=sc0;
+  box.querySelectorAll('.f').forEach(el=>{
+    const id=el.dataset.id,range=el.querySelector('input[type=range]'),nb=el.querySelector('input[type=number]');
+    const paint=()=>range.style.setProperty('--p',((range.value-range.min)/(range.max-range.min)*100)+'%');
+    const key=id.slice(2),cur=()=>id[0]==='r'?state.rates[state.active][key]:state.shared[key];
+    const set=v=>{
+      v=parseFloat(v);
+      if(isNaN(v)){nb.value=cur();return;}
+      v=Math.min(+range.max,Math.max(+range.min,v));
+      if(key==='cycle')v=Math.min(v,state.shared.window-1);
+      if(key==='window'&&state.shared.cycle>v-1){state.shared.cycle=Math.max(0,v-1);}
+      nb.value=v;range.value=v;paint();
+      if(id[0]==='r')state.rates[state.active][key]=v;else state.shared[key]=v;
+      if(key==='window'){buildInputs();}
+      render();
+    };
+    paint();
+    range.oninput=()=>set(range.value);
+    nb.onchange=()=>set(nb.value);
+  });
+}
+
+const tip=document.getElementById('tip');
+function showTip(e,h){tip.innerHTML=h;tip.style.opacity=1;tip.style.left=Math.min(e.clientX+14,innerWidth-280)+'px';tip.style.top=(e.clientY+16)+'px';}
+function hideTip(){tip.style.opacity=0;}
+const ICON={
+  pass:'<svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5 8.2l2 2 4-4.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  fail:'<svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5.6 5.6l4.8 4.8M10.4 5.6l-4.8 4.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  hold:'<svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 4.6v4.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="11.2" r="1" fill="currentColor"/></svg>'
+};
+
+function render(){
+  const c=calc(state.active),s=state.shared,sc=SC.find(x=>x.key===state.active);
+  const d=document.getElementById('derived');
+  if(d)d.innerHTML=`Paid inbound target <b>${eurK(c.inTarget)}</b>. Expected from open pipeline <b>${eurK(c.fromPipe)}</b>. New paid volume has to close <b>${eurK(c.remaining)}</b> in a selling window of <b>${mos(c.sell)}</b>.`;
+
+  document.getElementById('chips').innerHTML=
+    `<span class="chip"><b>Target</b> ${eurK(s.target)} new revenue in ${mos(s.window)}</span>`+
+    `<span class="chip"><b>Paid inbound</b> ${s.inShare}% of target, ${eurK(c.inTarget)}</span>`+
+    `<span class="chip"><b>ACV</b> ${eur(s.acv)}</span>`+
+    `<span class="chip"><b>Sales cycle</b> ${mos(s.cycle)}</span>`+
+    `<span class="chip"><b>Scenario</b> ${sc.name}</span>`;
+
+  document.getElementById('answerSub').textContent=`${sc.name} scenario. Open pipeline is expected to close ${eurK(c.fromPipe)} of the ${eurK(c.inTarget)} paid inbound target. New paid volume has to close the remaining ${eurK(c.remaining)} over ${mos(c.sell)}.`;
+  document.getElementById('tiles').innerHTML=[
+    ['Monthly paid spend',eurK(c.monthly),`${eurK(c.total)} across ${mos(c.sell)}`],
+    ['Max allowable CPL',eur(c.maxCpl),`Actual CPL ${eur(c.cpl)}`],
+    ['Max allowable paid CAC',eur(c.maxPaidCac),`Actual paid CAC ${eur(c.paidCac)}`],
+    ['New deals needed',num(Math.ceil(c.deals)),`${smart(c.deals/c.sell)} per selling month, on top of open pipeline`]
+  ].map(t=>`<div class="tile"><span class="k">${t[0]}</span><div class="num">${t[1]}</div><p>${t[2]}</p></div>`).join('');
+
+  const ch=[];
+  if(c.cpl<=c.maxCpl)ch.push(['pass',`CPL ${eur(c.cpl)} is within the ${eur(c.maxCpl)} ceiling`]);
+  else ch.push(['fail',`CPL ${eur(c.cpl)} is ${num((c.cpl/c.maxCpl-1)*100)}% over the ${eur(c.maxCpl)} ceiling`]);
+  if(c.remaining<=0)ch.push(['pass','Open pipeline covers the paid inbound target']);
+  else ch.push(['hold',`Open pipeline covers ${num(c.covPct)}% of the target`]);
+  if(s.cycle>=s.window)ch.push(['fail','Sales cycle is as long as the planning window']);
+  else if(s.cycle>0&&c.remaining>0)ch.push(['hold',`Spend starts ${mos(s.cycle)} before revenue lands`]);
+  document.getElementById('checks').innerHTML=ch.map(x=>`<span class="ck ${x[0]}">${ICON[x[0]]}${x[1]}</span>`).join('');
+
+  drawChain(c);drawGauges(c);drawPipeline(c);drawSpend();drawTable();
+}
+
+function drawChain(c){
+  const r=state.rates[state.active],m=c.sell,sc=SC.find(x=>x.key===state.active);
+  document.getElementById('chainSub').textContent=`${sc.name} scenario`;
+  const nodes=[
+    {l:'Paid spend',v:eurK(c.monthly),money:true,w:1,tip:`${eur(c.monthly)} per month<br>${eur(c.total)} across ${mos(m)}`},
+    {l:'Visits',v:num(c.visits/m),w:1,tip:`At ${eur(state.shared.cpv,2)} per visit<br>${num(c.visits)} across the period`},
+    {l:'Leads',v:num(c.leads/m),rate:r.v2l,w:c.leads/c.visits,tip:`${num(c.leads)} across the period`},
+    {l:'MQLs',v:num(c.mqls/m),rate:r.l2m,w:c.mqls/c.visits,tip:`${num(c.mqls)} across the period`},
+    {l:'SQLs',v:num(c.sqls/m),rate:r.m2s,w:c.sqls/c.visits,tip:`${num(c.sqls)} across the period`},
+    {l:'Deals',v:smart(c.deals/m),rate:r.s2w,w:c.deals/c.visits,tip:`${num(Math.ceil(c.deals))} deals across the period`},
+    {l:'New revenue',v:eurK(c.remaining/m),money:true,w:1,tip:`${eurK(c.remaining)} from new paid volume<br>plus ${eurK(c.fromPipe)} expected from open pipeline`}
+  ];
+  const prev=i=>{const l=nodes[i-1].l;return /^[A-Z]{2,}/.test(l)?l:l.toLowerCase();};
+  const el=document.getElementById('chain');
+  el.innerHTML=nodes.map((n,i)=>`<div class="node ${n.money?'money':''}" data-i="${i}">
+    <div class="lab">${n.l}</div><div class="val">${n.v}</div>
+    <div class="per">${n.rate!==undefined?`<span class="rate">${n.rate}%</span> of ${prev(i)}`:'per month'}</div>
+    <div class="barv"><i style="width:${Math.max(2,n.w*100)}%"></i></div></div>`).join('');
+  el.querySelectorAll('.node').forEach(nd=>{const n=nodes[+nd.dataset.i];nd.onmousemove=e=>showTip(e,`<b>${n.l}</b><br>${n.tip}`);nd.onmouseleave=hideTip;});
+  document.getElementById('chainNote').textContent=`Bars show each stage's volume as a share of visits. Lead to won: ${num(c.l2w*100,2)}%.`;
+}
+function gauge(label,a,cap,sub){
+  const max=Math.max(a,cap)*1.25,ok=a<=cap,col=ok?'var(--pass)':'var(--fail)';
+  return `<div class="gauge"><div class="gt"><span>${label}</span><b style="color:${col}">${eur(a)}</b></div>
+    <div class="track"><i style="width:${a/max*100}%;background:${col}"></i><span class="cap" style="left:calc(${cap/max*100}% - 1px)"></span></div>
+    <div class="gf"><span>${sub}</span><span>Ceiling <strong>${eur(cap)}</strong></span></div></div>`;
+}
+function drawGauges(c){
+  document.getElementById('gauges').innerHTML=`<p class="gnote">CPL and paid CAC are one constraint in two units. A CPL within its ceiling always means paid CAC within its ceiling.</p>`+
+    gauge('Cost per lead',c.cpl,c.maxCpl,c.cpl<=c.maxCpl?`${eur(c.maxCpl-c.cpl)} headroom`:`${eur(c.cpl-c.maxCpl)} over`)+
+    gauge('Paid CAC',c.paidCac,c.maxPaidCac,c.paidCac<=c.maxPaidCac?`${eur(c.maxPaidCac-c.paidCac)} headroom`:`${eur(c.paidCac-c.maxPaidCac)} over`)+
+    `<div class="stat3"><div>Max total CAC<b>${eur(c.maxCac)}</b></div><div>Break-even cost per visit<b>${eur(c.beCpv,2)}</b></div><div>Monthly spend ceiling<b>${eurK(c.ceiling)}</b></div></div>`;
+}
+function drawPipeline(c){
+  const s=state.shared,max=Math.max(c.totalPipeNeeded,s.pipeline)*1.08,done=c.remaining<=0;
+  document.getElementById('pipeline').innerHTML=`<div class="big">${num(c.covPct)}%<small>of the target covered by open pipeline</small></div>
+    <div class="gauge" style="margin-top:16px"><div class="track"><i style="width:${s.pipeline/max*100}%;background:var(--data)"></i><span class="cap" style="left:calc(${c.totalPipeNeeded/max*100}% - 1px)"></span></div>
+    <div class="gf"><span>Open <strong>${eurK(s.pipeline)}</strong></span><span>Needed for full target <strong>${eurK(c.totalPipeNeeded)}</strong></span></div></div>
+    <div class="stat3"><div>Expected from open pipeline<b>${eurK(c.fromPipe)}</b></div><div>New SQL pipeline to create<b style="color:${done?'var(--pass)':'var(--fg)'}">${eurK(c.newPipe)}</b></div>
+    <div>New SQLs needed<b>${num(Math.ceil(c.sqls))}</b></div></div>
+    <p class="gnote" style="margin:14px 0 0">Coverage ratio ${num(c.cov,1)}x. Open pipeline is assumed to close inside the planning window at the SQL to closed-won rate.</p>`;
+}
+function drawSpend(){
+  const svg=document.getElementById('spend'),W=svg.clientWidth||900,H=230,pl=56,pr=12,pt=22,pb=30;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.setAttribute('height',H);
+  const data=SC.map(s=>({s,c:calc(s.key)}));
+  const muted=css('--muted'),line=css('--line'),fg=css('--fg'),card=css('--card');
+  const top0=Math.max(...data.map(d=>Math.max(d.c.monthly,d.c.ceiling)));
+  if(!(top0>0)){
+    svg.innerHTML=`<text x="${W/2}" y="${H/2}" font-size="14" text-anchor="middle" fill="${muted}">Open pipeline covers the paid inbound target in every scenario. No new paid spend is needed.</text>`;
+  } else {
+    const max=top0*1.15,ph=H-pt-pb,pw=W-pl-pr,y=v=>pt+ph-v/max*ph;
+    let g='';
+    for(let i=0;i<=4;i++){const v=max/4*i;g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="${line}"/><text x="${pl-10}" y="${y(v)+4}" font-size="11.5" text-anchor="end" fill="${muted}">${eurK(v)}</text>`;}
+    const slot=pw/3,bw=Math.min(88,slot*.42);
+    data.forEach((d,i)=>{
+      const x=pl+slot*i+(slot-bw)/2,top=y(d.c.monthly),base=pt+ph,r=Math.min(4,base-top),on=d.s.key===state.active,cy=y(d.c.ceiling);
+      if(d.c.monthly>0) g+=`<path d="M${x},${base} V${top+r} Q${x},${top} ${x+r},${top} H${x+bw-r} Q${x+bw},${top} ${x+bw},${top+r} V${base} Z" fill="${css(d.s.v)}" opacity="${on?1:.45}"/>`;
+      g+=`<line x1="${x-14}" x2="${x+bw+14}" y1="${cy}" y2="${cy}" stroke="${fg}" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+      const ly=Math.min(top,cy)-8;
+      g+=`<text x="${x+bw/2}" y="${ly}" font-size="13" font-weight="800" text-anchor="middle" fill="${fg}" paint-order="stroke" stroke="${card}" stroke-width="4">${eurK(d.c.monthly)}</text>`;
+      g+=`<text x="${x+bw/2}" y="${H-9}" font-size="12.5" font-weight="${on?700:500}" text-anchor="middle" fill="${on?fg:muted}">${d.s.name}</text>`;
+      g+=`<rect class="hit" data-i="${i}" x="${pl+slot*i}" y="${pt}" width="${slot}" height="${ph}" fill="transparent" style="cursor:pointer"/>`;
+    });
+    svg.innerHTML=g;
+    svg.querySelectorAll('.hit').forEach(el=>{const d=data[+el.dataset.i];
+      el.onmousemove=e=>showTip(e,`<b>${d.s.name}</b><br>Spend ${eur(d.c.monthly)} per month<br>Ceiling ${eur(d.c.ceiling)} per month<br>CPL ${eur(d.c.cpl)}, max ${eur(d.c.maxCpl)}`);
+      el.onmouseleave=hideTip;el.onclick=()=>setActive(d.s.key);});
+  }
+  document.getElementById('legend').innerHTML=SC.map(s=>`<span><span class="sw" style="background:var(${s.v})"></span>${s.name}</span>`).join('')+
+    `<span><svg width="20" height="4" aria-hidden="true"><line x1="0" x2="20" y1="2" y2="2" stroke="${fg}" stroke-width="1.5" stroke-dasharray="5 3"/></svg>Spend ceiling for that scenario</span>`;
+}
+function drawTable(){
+  const rows=SC.map(s=>({s,c:calc(s.key),r:state.rates[s.key]}));
+  const L=(l,f,cls)=>`<tr><td>${l}</td>${rows.map(d=>`<td class="${cls?cls(d):''}">${f(d)}</td>`).join('')}</tr>`;
+  document.getElementById('table').innerHTML=`<tr><th>Metric</th>${rows.map(d=>`<th><span class="sw" style="background:var(${d.s.v})"></span>${d.s.name}</th>`).join('')}</tr>`+
+    L('Visit to lead',d=>d.r.v2l+'%')+L('Lead to MQL',d=>d.r.l2m+'%')+L('MQL to SQL',d=>d.r.m2s+'%')+L('SQL to closed-won',d=>d.r.s2w+'%')+
+    L('Visits needed',d=>num(d.c.visits))+L('Leads needed',d=>num(d.c.leads))+L('SQLs needed',d=>num(d.c.sqls))+L('Monthly paid spend',d=>eur(d.c.monthly))+
+    L('Actual CPL',d=>eur(d.c.cpl),d=>d.c.cpl<=d.c.maxCpl?'ok':'no')+L('Max CPL',d=>eur(d.c.maxCpl))+
+    L('Actual paid CAC',d=>eur(d.c.paidCac),d=>d.c.paidCac<=d.c.maxPaidCac?'ok':'no')+L('Max paid CAC',d=>eur(d.c.maxPaidCac))+
+    L('Break-even cost per visit',d=>eur(d.c.beCpv,2))+L('Expected from open pipeline',d=>eurK(d.c.fromPipe))+L('Open pipeline coverage',d=>num(d.c.covPct)+'%')+L('New SQL pipeline to create',d=>eurK(d.c.newPipe))+L('New deals needed',d=>num(Math.ceil(d.c.deals)));
+}
+
+buildScen();buildInputs();render();
+addEventListener('resize',drawSpend);
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',render);
+</script>
+</body>
+</html>
